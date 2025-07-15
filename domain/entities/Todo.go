@@ -1,65 +1,171 @@
 package entities
 
 import (
-	"errors"
 	"time"
-	"github.com/google/uuid"
+	"fmt"
+	value_object "goTodoApp/domain/value-object"
 )
 
 type Todo struct {
-    ID          string     `gorm:"type:char(36);primaryKey"`          // UUIDなど固定長文字列
-    Title       string     `gorm:"type:varchar(255);not null"`        // 255文字の文字列、null不可
-    Description string     `gorm:"type:text"`                         // テキスト型
-    DueDate     *time.Time `gorm:"type:date"`                         // 日付だけ（yyyy-mm-dd）
-    CompletedAt *time.Time                                 // 省略すると自動判別
-    CreatedAt   time.Time  `gorm:"autoCreateTime"`                    // 作成日時を自動セット
-    UpdatedAt   time.Time  `gorm:"autoUpdateTime"`                    // 更新日時を自動セット
+	id          value_object.TodoID
+	userID      value_object.UserID
+	title       value_object.Title
+	description *value_object.Description
+	dueDate     *value_object.DueDate
+	completedAt *value_object.CompletedAt
+	createdAt   time.Time
+	updatedAt   time.Time
 }
 
 // 新しいTodoを作成する
-func NewTodo(title string, description string, dueDate *time.Time) (*Todo, error) {
-	if title == "" {
-		return nil, errors.New("title is required")
+func NewTodo(
+	id          value_object.TodoID,
+	userID      value_object.UserID,
+	title       value_object.Title,
+	description *value_object.Description,
+	dueDate     *value_object.DueDate,
+	completedAt *value_object.CompletedAt,
+	createdAt   time.Time,
+	updatedAt   time.Time,
+	) *Todo {
+		return &Todo{
+			id:          id,
+			userID:      userID,
+			title:       title,
+			description: description,
+			dueDate:     dueDate,
+			createdAt:   createdAt,
+			updatedAt:   updatedAt,
+		}
 	}
-	return &Todo{
-		ID:          uuid.New().String(),
-		Title:       title,
-		Description: description,
-		DueDate:     dueDate,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}, nil
-}
-
-// Todoを更新する
-func (t *Todo) Update(fields map[string]interface{}) error {
-	if title, ok := fields["title"].(string); ok && title != "" {
-		t.Title = title
-	} else if ok && title == "" {
-		return errors.New("title is required")
-	}
-
-	if description, ok := fields["description"].(string); ok {
-		t.Description = description
-	}
-
-	if dueDate, ok := fields["dueDate"].(*time.Time); ok {
-		t.DueDate = dueDate
+	//Todo Entityのgetter
+	func (t *Todo) ID() value_object.TodoID {
+		return t.id
 	}
 
-	t.UpdatedAt = time.Now()
+	func (t *Todo) UserID() value_object.UserID {
+		return t.userID
+	}
+
+	func (t *Todo) Title() value_object.Title {
+		return t.title
+	}
+
+	func (t *Todo) Description() *value_object.Description {
+		return t.description
+	}
+
+	func (t *Todo) DueDate() *value_object.DueDate {
+		return t.dueDate
+	}
+
+	func (t *Todo) CompletedAt() *value_object.CompletedAt {
+		return t.completedAt
+	}
+
+	func (t *Todo) UpdatedAt() time.Time{
+		return t.updatedAt
+	}
+
+	func (t *Todo) CreatedAt() time.Time{
+		return t.createdAt
+	}
+
+	//setter
+	func (t *Todo) SetCreatedAt(ti time.Time) {
+	t.createdAt = ti
+	}
+
+	func (t *Todo) SetUpdatedAt(ti time.Time) {
+	t.updatedAt = ti
+	}	
+
+
+//title string => value-object
+func (t *Todo) UpdateTitle(newTitle string) error{
+	title, err := value_object.NewTitle(newTitle)
+	if err != nil{
+		return err
+	}
+	t.title = title
+	t.updatedAt = time.Now()
 	return nil
 }
 
+//completed_atに値が追加される時に発火
+func (t *Todo) MarkCompleted(at time.Time) {
+	completedAt := value_object.NewCompletedAt(at)
+	t.completedAt = completedAt
+	t.updatedAt = time.Now()
+}
+//completed_atを空に
+func (t *Todo) UnmarkCompleted() {
+	t.completedAt = nil
+	t.updatedAt = time.Now()
+}
+
+func (t *Todo) UpdateDescription(newDescription string) error{
+	fmt.Printf("[DEBUG] UpdateDescription called with: %s\n", newDescription)
+	description, err := value_object.NewDescription(newDescription)
+	if err != nil {
+		return err
+	}
+	t.description = description
+	t.updatedAt = time.Now()
+	return nil
+}
+//descriptionを空に
+func (t *Todo) ClearDescription() {
+	fmt.Println("[DEBUG] ClearDescription called")
+	t.description = nil
+	t.updatedAt = time.Now()
+}
+
+func (t *Todo) UpdateDueDate(newDueDate string) error{
+	dueDate, err := value_object.NewDueDate(newDueDate)
+	if err != nil {
+		return err
+	}
+	t.dueDate = dueDate
+	t.updatedAt = time.Now()
+	return nil
+}
+func (t *Todo) ClearDueDate() {
+	t.dueDate = nil
+	t.updatedAt = time.Now()
+}
+// // Todoを更新する
+// func (t *Todo) Update(fields map[string]interface{}) error {
+// 	if title, ok := fields["title"].(string); ok && title != "" {
+// 		t.Title = title
+// 	} else if ok && title == "" {
+// 		return errors.New("title is required")
+// 	}
+
+// 	if description, ok := fields["description"].(string); ok {
+// 		t.Description = description
+// 	}
+
+// 	if dueDate, ok := fields["dueDate"].(*time.Time); ok {
+// 		t.DueDate = dueDate
+// 	}
+
+// 	t.UpdatedAt = time.Now()
+// 	return nil
+// }
+
 // Todoを複製する
 func (t *Todo) Duplicate() *Todo {
+	newID := value_object.NewTodoID()
+	newTitle, _ := value_object.NewTitle(t.title.Value() + "のコピー")
 	return &Todo{
-		ID: uuid.New().String(),
-		Title:       t.Title + "のコピー",
-		Description: t.Description,
-		DueDate:     nil,
-		CompletedAt: nil,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		id:          newID,
+		userID:      t.userID, // 同じユーザー
+		title:       newTitle,
+		description: t.description, // 本文はそのまま
+		dueDate:     nil, // 複製時は期限なし
+		completedAt: nil, // 完了状態はリセット
+		createdAt:   time.Now(),
+		updatedAt:   time.Now(),
 	}
 }

@@ -18,7 +18,7 @@ func (s *BcryptHashService) HashPassword(password string) (string, error) {
 }
 
 // CheckPasswordHash はパスワードとハッシュを比較する
-func (s *BcryptHashService) CheckPasswordHash(password, hash string) bool{
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+func (s *BcryptHashService) CheckPasswordHash(rawPassword string, hashedPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(rawPassword))
 	return err == nil
 }

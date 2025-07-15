@@ -1,12 +1,16 @@
 package repositories
 
-import "goTodoApp/domain/entities"
+import (
+	"goTodoApp/domain/entities"
+	value_object "goTodoApp/domain/value-object"
+
+)
 
 type ITodoRepository interface {
-	Save(todo *entities.Todo) error
-	FindByID(id string) (*entities.Todo, error)
-	FindAll() ([]*entities.Todo, error)
-	Delete(id string) error
-	Duplicate(id string) (*entities.Todo, error)
-	Update(id string, fields map[string]interface{}) error
+	Save(todo *entities.Todo) (*entities.Todo,error)
+	FindTodoByID(todoID value_object.TodoID, userID value_object.UserID) (*entities.Todo, error)
+	FindByUserIDWithFilters(userID value_object.UserID, filters *TodoFilters) ([]*entities.Todo, error)
+	Delete(todoid value_object.TodoID, userID value_object.UserID ) error
+	Update(todo *entities.Todo) (*entities.Todo, error)   
+	Duplicate(todoid value_object.TodoID, userID value_object.UserID ) (*entities.Todo, error)
 }

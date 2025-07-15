@@ -2,5 +2,5 @@ package services
 
 type IHashService interface {
 	HashPassword(password string) (string, error)
-	CheckPasswordHash(password, hash string) bool
+	CheckPasswordHash(rawPassword string, hashedPassword string) bool
 }

@@ -1,28 +1,28 @@
 # ベースイメージ
-FROM golang:1.20-alpine
+FROM golang:1.24-alpine
 
-# 必要なツールのインストール
+# 必要なツールをインストール
 RUN apk add --no-cache bash git
 
-# 作業ディレクトリを設定
+# 作業ディレクトリの作成
 WORKDIR /app
 
-# Goモジュールキャッシュを利用して依存関係を取得
+# Goの依存ファイルをコピーしてキャッシュを活かす
 COPY go.mod go.sum ./
 RUN go mod download
 
-# アプリケーションのソースコードをコピー
+# ソースコードをすべてコピー
 COPY . .
 
-# アプリケーションをビルド
-RUN go build -o main .
+# アプリケーションをビルド（main.go が cmd/ にある場合）
+RUN go build -o main ./cmd/main.go
 
-# ポート番号の公開
+# ポートを公開
 EXPOSE 8080
 
 # wait-for-it.sh をコピーして実行権限付与
 COPY wait-for-it.sh /wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
 
-# MySQLの起動を待ってからアプリを起動
+# アプリを起動（MySQLが起動してから）
 CMD ["./wait-for-it.sh", "db:3306", "--", "./main"]
