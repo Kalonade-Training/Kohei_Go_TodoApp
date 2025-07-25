@@ -38,7 +38,7 @@ func (r *GormUserRepository) Save(user *entities.User) (*entities.User, error) {
 // FindByID はIDでユーザーを取得する
 func (r *GormUserRepository) FindByUsername(username string) (*entities.User, error) {
     var userModel model.User
-		usernameVo, err := value_object.
+		usernameVo, err := value_object.NewUsername(username)
 		// NewUsernameは戻り値にerrorがあるのでエラーチェックが必要NewUsername(username) 
     if err != nil {
         return nil, err

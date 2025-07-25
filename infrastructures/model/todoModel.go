@@ -11,6 +11,7 @@ type Todo struct {
 	Description *string `gorm:"type:text"`
 	DueDate *time.Time `gorm:"type:date"`
 	CompletedAt *time.Time `gorm:"type:date"`
+	Status string `gorm:"type:char(15);not null"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }

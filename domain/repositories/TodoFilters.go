@@ -8,5 +8,5 @@ type TodoFilters struct {
 	Description *string
 	DueDateFrom *time.Time
 	DueDateTo *time.Time
-	Completed *bool
+	Status *string
 }

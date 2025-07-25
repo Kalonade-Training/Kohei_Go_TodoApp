@@ -16,6 +16,7 @@ type CreateTodoInput struct {
 	Title   value_object.Title
 	Description *value_object.Description
 	DueDate *value_object.DueDate
+	Status value_object.Status
 }
 
 type CreateTodoUseCase struct {
@@ -37,6 +38,7 @@ func (uc *CreateTodoUseCase) Execute(input CreateTodoInput) (*entities.Todo, err
 		input.DueDate,
 		// CompletedAt: 初期は nil
 		nil, 
+		input.Status,
 		time.Now(),
 		time.Now(),
 	)

@@ -13,6 +13,7 @@ type Todo struct {
 	description *value_object.Description
 	dueDate     *value_object.DueDate
 	completedAt *value_object.CompletedAt
+	status      value_object.Status
 	createdAt   time.Time
 	updatedAt   time.Time
 }
@@ -25,6 +26,7 @@ func NewTodo(
 	description *value_object.Description,
 	dueDate     *value_object.DueDate,
 	completedAt *value_object.CompletedAt,
+	status      value_object.Status,
 	createdAt   time.Time,
 	updatedAt   time.Time,
 	) *Todo {
@@ -34,6 +36,7 @@ func NewTodo(
 			title:       title,
 			description: description,
 			dueDate:     dueDate,
+			status:      status,
 			createdAt:   createdAt,
 			updatedAt:   updatedAt,
 		}
@@ -61,6 +64,10 @@ func NewTodo(
 
 	func (t *Todo) CompletedAt() *value_object.CompletedAt {
 		return t.completedAt
+	}
+
+	func (t *Todo) Status() value_object.Status {
+		return t.status
 	}
 
 	func (t *Todo) UpdatedAt() time.Time{
@@ -94,8 +101,7 @@ func (t *Todo) UpdateTitle(newTitle string) error{
 
 //completed_atに値が追加される時に発火
 func (t *Todo) MarkCompleted(at time.Time) {
-	completedAt := value_object.NewCompletedAt(at)
-	t.completedAt = completedAt
+	t.completedAt = value_object.NewCompletedAt(at)
 	t.updatedAt = time.Now()
 }
 //completed_atを空に
@@ -134,6 +140,28 @@ func (t *Todo) ClearDueDate() {
 	t.dueDate = nil
 	t.updatedAt = time.Now()
 }
+
+func (t *Todo) ToCompleted(at time.Time) error {
+	t.MarkCompleted(at)
+	status, err := value_object.NewStatus("completed")
+	if err != nil {
+		return err
+	}
+	t.status = *status
+	t.updatedAt = time.Now()
+	return nil
+}
+
+func (t *Todo) ToInProgress() error {
+	t.completedAt = nil
+	status, err := value_object.NewStatus("in_progress")
+	if err != nil {
+		return err
+	}
+	t.status = *status
+	t.updatedAt = time.Now()
+	return nil
+}
 // // Todoを更新する
 // func (t *Todo) Update(fields map[string]interface{}) error {
 // 	if title, ok := fields["title"].(string); ok && title != "" {
@@ -155,9 +183,13 @@ func (t *Todo) ClearDueDate() {
 // }
 
 // Todoを複製する
-func (t *Todo) Duplicate() *Todo {
+func (t *Todo) Duplicate() (*Todo, error) {
 	newID := value_object.NewTodoID()
 	newTitle, _ := value_object.NewTitle(t.title.Value() + "のコピー")
+	newStatus, err := value_object.NewStatus("in_progress")
+	if err != nil {
+		return nil, err
+	}
 	return &Todo{
 		id:          newID,
 		userID:      t.userID, // 同じユーザー
@@ -165,7 +197,8 @@ func (t *Todo) Duplicate() *Todo {
 		description: t.description, // 本文はそのまま
 		dueDate:     nil, // 複製時は期限なし
 		completedAt: nil, // 完了状態はリセット
+		status:      *newStatus,
 		createdAt:   time.Now(),
 		updatedAt:   time.Now(),
-	}
+	},nil
 }

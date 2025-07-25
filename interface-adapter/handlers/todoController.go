@@ -84,12 +84,22 @@ func (tc *TodoController) Create(c *gin.Context) {
 		}
 	}
 
+	//Status
+	var status *value_object.Status
+	if todoDTO.Status != nil {
+		status, err = value_object.NewStatus(*todoDTO.Status)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+	}
+
 	// ④ 入力DTO → ユースケース入力にマッピング
 	input := todo.CreateTodoInput{
 		UserID:      authUserID,
 		Title:       title,
 		Description: description,
 		DueDate:     dueDate,
+		Status:      *status,
 	}
 
 	// ⑤ ユースケースを実行
@@ -153,7 +163,7 @@ func (tc *TodoController) FindByUserIDWithFilters(c *gin.Context) {
 		Description: filtersDTO.Description,
 		DueDateFrom: dueDateFromTime,
 		DueDateTo:   dueDateToTime,
-		Completed:   filtersDTO.Completed,
+		Status:      filtersDTO.Status,
 	}
 
 	todos, err := tc.findByUserIDWithFiltersUC.Execute(authUserID, domainFilters)
@@ -256,6 +266,17 @@ func (tc *TodoController) Update(c *gin.Context) {
         return
     }
 	}
+	var status *value_object.Status
+	if userInput.Status == nil || (userInput.Status != nil && *userInput.Status == "") {
+		status = nil
+	} else {
+		 // それ以外はパースしてバリデーション
+    status, err = value_object.NewStatus(*userInput.Status)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+		}
+	}
 
 	var completedAt *value_object.CompletedAt
 	if userInput.CompletedAt != nil {
@@ -272,6 +293,7 @@ func (tc *TodoController) Update(c *gin.Context) {
 		Title:       title,
 		Description: description,
 		DueDate:     dueDate,
+		Status:      status,
 		CompletedAt: completedAt,
 	}
 	todoID, err := value_object.FromStringTodoID(id)
@@ -369,6 +391,12 @@ func entityToDTO(todo *entities.Todo) res.TodoResponse {
 		val := todo.CompletedAt().Value()
 		completedAt = &val
 	}
+	// Statusのnilチェック
+	var status *string
+	if todo.Status().Value() != "" {
+    val := todo.Status().Value()
+    status = &val
+	}
 
 	return res.TodoResponse{
 		ID:          todo.ID().Value(),
@@ -376,6 +404,7 @@ func entityToDTO(todo *entities.Todo) res.TodoResponse {
 		Title:       todo.Title().Value(),
 		Description: description,
 		DueDate:     dueDate,
+		Status:      status,
 		CompletedAt: completedAt,
 		CreatedAt:   todo.CreatedAt(),
 		UpdatedAt:   todo.UpdatedAt(),

@@ -36,6 +36,7 @@ func EntityToTodoModel(todo entities.Todo) model.Todo{
 		Description: description,
 		DueDate: dueDate,
 		CompletedAt: completedAt,
+		Status: todo.Status().Value(),
 		CreatedAt: todo.CreatedAt(),
 		UpdatedAt: todo.UpdatedAt(),
 	}
@@ -50,6 +51,11 @@ func ModelToEntity(m model.Todo) (*entities.Todo,error) {
 	userID:= value_object.FromStringUserID(m.UserID)
 
 	title, err := value_object.NewTitle(m.Title)
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := value_object.NewStatus(m.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +88,7 @@ func ModelToEntity(m model.Todo) (*entities.Todo,error) {
 		description,
 		dueDate,
 		completedAt,
+		*status,
 		m.CreatedAt,
 		m.UpdatedAt,
 	),nil

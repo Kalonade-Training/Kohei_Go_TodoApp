@@ -85,11 +85,12 @@ func (r *GormTodoRepository) FindByUserIDWithFilters(userID value_object.UserID,
 	if filters.DueDateTo != nil {
 			query = query.Where("due_date <= ?", filters.DueDateTo)
 	}
-	if filters.Completed != nil {
-		if *filters.Completed {
-			query = query.Where("completed_at IS NOT NULL")
-		} else {
-			query = query.Where("completed_at IS NULL")
+	if filters.Status != nil {
+		switch *filters.Status {
+			case "completed":
+				query = query.Where("status = ?", "completed")
+			case "in_progress":
+				query = query.Where("status = ?", "in_progress")
 		}
 	}
 	if err := query.Find(&models).Error; err != nil {
@@ -133,8 +134,10 @@ func (r *GormTodoRepository) Duplicate(todoid value_object.TodoID, userid value_
 	}
 
 	// エンティティを複製（IDなどは新しく振られる想定）
-	duplicatedEntity := originalEntity.Duplicate()
-
+	duplicatedEntity, err := originalEntity.Duplicate()
+	if err != nil {
+    return nil, err
+	}
 	// エンティティ → モデルに変換
 	duplicatedModel := mapper.EntityToTodoModel(*duplicatedEntity)
 

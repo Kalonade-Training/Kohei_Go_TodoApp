@@ -30,12 +30,12 @@ func (uc *LoginUserUseCase) Execute(username value_object.Username, rawPassword 
 	// ユーザーの検索
 	user, err := uc.userRepo.FindByUsername(username.Value())
 	if err != nil {
-		return "", errors.New("invalid username or password")
+		return "", errors.New("User not found")
 	}
 
 	// パスワードチェック（ハッシュと比較）
 	if !uc.hashService.CheckPasswordHash(rawPassword.Value(), user.HashedPassword().Value()) {
-		return "", errors.New("invalid username or password")
+		return "", errors.New("invalid password")
 	}
 
 	// JWTトークン発行

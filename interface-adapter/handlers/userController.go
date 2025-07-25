@@ -46,11 +46,20 @@ func (ctrl *UserController) Register(c *gin.Context) {
 	token, err := ctrl.RegisterUserUC.Execute(username, password)
 	fmt.Printf("[DEBUG] UseCase Execute returned: token=%s, err=%v\n", token, err)
 	if err != nil {
+		//重複エラー
+		if err.Error() == "username already exists"{
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"token": token})
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "register successful",
+		"token": token,
+		"username": username.Value(),
+	})
 }
 
 //ユーザー認証を行いTokenをreturn
@@ -80,7 +89,14 @@ func (ctrl *UserController) Login(c *gin.Context) {
 	//ログイン処理を実行してトークンを生成
 	token, err := ctrl.LoginUserUC.Execute(username, password)
 	if err != nil{
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
+		switch err.Error(){
+		case "user not found":
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User is not registered"})
+		case "invalid password":
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})	
+		default:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})		
+		}
 		return
 	}
 	
@@ -88,5 +104,6 @@ func (ctrl *UserController) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "login successful",
 		"token": token,
+		"username": username.Value(),
 	})
 }
