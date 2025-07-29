@@ -18,3 +18,7 @@ func NewDescription(value string)(*Description, error){
 func (d Description) Value() string{
 	return d.value
 }
+
+func RestoreDescription(value string) *Description {
+	return &Description{value: value}
+}

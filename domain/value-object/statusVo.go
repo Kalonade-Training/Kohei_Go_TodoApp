@@ -35,3 +35,7 @@ func (s Status) IsInProgress() bool {
 func (s Status) IsCompleted() bool {
 	return s.value == StatusCompleted
 }
+
+func RestoreStatus(value string) *Status {
+	return &Status{value: value}
+}

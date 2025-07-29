@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"time"
+	"log"
 	value_object "goTodoApp/domain/value-object"
 	req "goTodoApp/interface-adapter/dto/request"
 	res "goTodoApp/interface-adapter/dto/response"
@@ -118,6 +119,7 @@ func (tc *TodoController) Create(c *gin.Context) {
 }
 
 func (tc *TodoController) FindByUserIDWithFilters(c *gin.Context) {
+	
 	// JWTからUserIDを取得
 	authUserID, err := common.GetAuthUserID(c)
 		if err != nil {
@@ -165,8 +167,9 @@ func (tc *TodoController) FindByUserIDWithFilters(c *gin.Context) {
 		DueDateTo:   dueDateToTime,
 		Status:      filtersDTO.Status,
 	}
-
+	
 	todos, err := tc.findByUserIDWithFiltersUC.Execute(authUserID, domainFilters)
+		
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -216,65 +219,64 @@ func (tc *TodoController) FindTodoByID(c *gin.Context) {
 
 func (tc *TodoController) Update(c *gin.Context) {
 	id := c.Param("id")
+	log.Printf("[DEBUG] Update called with id=%s", id)
 
-	// JWTトークンからユーザーIDを取得
 	authUserID, err := common.GetAuthUserID(c)
 	if err != nil {
+		log.Printf("[ERROR] Invalid user ID in token: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID in token"})
 		return
 	}
+	log.Printf("[DEBUG] Auth user ID: %s", authUserID)
 
-	// リクエストBodyをDTO構造体にバインド
 	var userInput req.UpdateTodoRequest
 	if err := c.ShouldBindJSON(&userInput); err != nil {
+		log.Printf("[ERROR] JSON bind error: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	log.Printf("[DEBUG] Parsed user input: %+v", userInput)
+
+	// 各Value Object生成時のエラーハンドリング（ログ追加）
+
+	var title *value_object.Title
+	if userInput.Title != nil {
+		t, err := value_object.NewTitle(*userInput.Title)
+		if err != nil {
+			log.Printf("[ERROR] Invalid Title: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-	// 値ごとのバリデーションとVO生成
-	var title *value_object.Title
-	if userInput.Title != nil {
-    t, err := value_object.NewTitle(*userInput.Title)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
-    title = &t
+		title = &t
 	}
 
 	var description *value_object.Description
-	if userInput.Description == nil ||  (userInput.Description != nil && *userInput.Description == "") {
-    description = nil
-	} else if *userInput.Description == "" {
-    description = nil
-		} else {
-    description, err = value_object.NewDescription(*userInput.Description)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	if userInput.Description != nil && *userInput.Description != "" {
+		description, err = value_object.NewDescription(*userInput.Description)
+		if err != nil {
+			log.Printf("[ERROR] Invalid Description: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	var dueDate *value_object.DueDate
-	if userInput.DueDate == nil || (userInput.DueDate != nil && *userInput.DueDate == "") {
-    // due_date が null または空文字の場合は nil（削除扱い）
-    dueDate = nil
-	} else {
-    // それ以外はパースしてバリデーション
-    dueDate, err = value_object.NewDueDate(*userInput.DueDate)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	if userInput.DueDate != nil && *userInput.DueDate != "" {
+		dueDate, err = value_object.NewDueDate(*userInput.DueDate)
+		if err != nil {
+			log.Printf("[ERROR] Invalid DueDate: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 	}
+
 	var status *value_object.Status
-	if userInput.Status == nil || (userInput.Status != nil && *userInput.Status == "") {
-		status = nil
-	} else {
-		 // それ以外はパースしてバリデーション
-    status, err = value_object.NewStatus(*userInput.Status)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
+	if userInput.Status != nil && *userInput.Status != "" {
+		status, err = value_object.NewStatus(*userInput.Status)
+		if err != nil {
+			log.Printf("[ERROR] Invalid Status: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 	}
 
@@ -282,13 +284,20 @@ func (tc *TodoController) Update(c *gin.Context) {
 	if userInput.CompletedAt != nil {
 		parsed, err := time.Parse("2006-01-02", *userInput.CompletedAt)
 		if err != nil {
+			log.Printf("[ERROR] Invalid CompletedAt format: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid completed_at format. Use YYYY-MM-DD"})
-        return
+			return
 		}
 		completedAt = value_object.NewCompletedAt(parsed)
 	}
 
-	// ユースケース実行
+	todoID, err := value_object.FromStringTodoID(id)
+	if err != nil {
+		log.Printf("[ERROR] Invalid Todo ID: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	input := todo.UpdateTodoInput{
 		Title:       title,
 		Description: description,
@@ -296,23 +305,16 @@ func (tc *TodoController) Update(c *gin.Context) {
 		Status:      status,
 		CompletedAt: completedAt,
 	}
-	todoID, err := value_object.FromStringTodoID(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
 	updatedTodo, err := tc.updateTodoUC.Execute(todoID, authUserID, input)
 	if err != nil {
+		log.Printf("[ERROR] Todo update failed: %v", err)
 		handleError(c, err)
 		return
 	}
-	
-	// エンティティ → DTO に変換して返却
-	todoResponse := entityToDTO(updatedTodo)
 
+	todoResponse := entityToDTO(updatedTodo)
 	c.JSON(http.StatusOK, todoResponse)
-	return
 }
 
 func (tc *TodoController) Delete(c *gin.Context) {

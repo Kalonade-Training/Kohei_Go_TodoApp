@@ -15,4 +15,5 @@ func TodoRoutes(r *gin.Engine, todoController *handlers.TodoController, authMidd
 	authorized.PUT("/todos/:id", todoController.Update)
 	authorized.DELETE("/todos/:id", todoController.Delete)
 	authorized.POST("/todos/:id/duplicate", todoController.Duplicate)
+	
 }

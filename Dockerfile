@@ -25,4 +25,4 @@ COPY wait-for-it.sh /wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
 
 # アプリを起動（MySQLが起動してから）
-CMD ["./wait-for-it.sh", "db:5432", "--", "./main"]
+CMD ["./wait-for-it.sh", "db:5432", "--timeout=30", "--strict", "--", "./main"]

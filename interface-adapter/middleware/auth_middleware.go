@@ -30,6 +30,9 @@ func TokenAuthMiddleware(tokenService services.ITokenService) gin.HandlerFunc{
 			c.Abort()
 			return
 		}
+		//空白スペースを削除
+		userID = strings.TrimSpace(userID);
+
 		//userIDをコンテキストに設定
 		c.Set("userID", userID)
 		c.Next()

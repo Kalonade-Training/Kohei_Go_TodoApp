@@ -5,17 +5,14 @@ import(
 	"goTodoApp/domain/value-object"
 	"goTodoApp/infrastructures/model"
 	"time"
-	"log"
+	"strings"
 )
 //Entity->Model型に変換
 func EntityToTodoModel(todo entities.Todo) model.Todo{
 	var description *string
-	if todo.Description() != nil {
-		val := todo.Description().Value()
-		log.Printf("[DEBUG] EntityToTodoModel: Description.Value() = %s", val)
+	if desc := todo.Description(); desc != nil {
+		val := strings.TrimSpace(desc.Value())
 		description = &val
-	} else {
-		log.Println("[DEBUG] EntityToTodoModel: Description is nil")
 	}
 
 	var dueDate *time.Time
@@ -30,15 +27,15 @@ func EntityToTodoModel(todo entities.Todo) model.Todo{
     }
 
 	return model.Todo{
-		ID: todo.ID().Value(),
-		UserID: todo.UserID().Value(),
-		Title: todo.Title().Value(),
+		ID:          strings.TrimSpace(todo.ID().Value()),
+		UserID:      strings.TrimSpace(todo.UserID().Value()),
+		Title:       strings.TrimSpace(todo.Title().Value()),
 		Description: description,
-		DueDate: dueDate,
+		DueDate:     dueDate,
 		CompletedAt: completedAt,
-		Status: todo.Status().Value(),
-		CreatedAt: todo.CreatedAt(),
-		UpdatedAt: todo.UpdatedAt(),
+		Status:      strings.TrimSpace(todo.Status().Value()),
+		CreatedAt:   todo.CreatedAt(),
+		UpdatedAt:   todo.UpdatedAt(),
 	}
 }
 //Model->Entity型に変換
@@ -50,22 +47,13 @@ func ModelToEntity(m model.Todo) (*entities.Todo,error) {
 	}
 	userID:= value_object.FromStringUserID(m.UserID)
 
-	title, err := value_object.NewTitle(m.Title)
-	if err != nil {
-		return nil, err
-	}
+	title := value_object.RestoreTitle(m.Title)
 
-	status, err := value_object.NewStatus(m.Status)
-	if err != nil {
-		return nil, err
-	}
+	status := value_object.RestoreStatus(m.Status)
 	//任意項目
 	var description *value_object.Description
 	if m.Description != nil && *m.Description != "" {
-		d, err := value_object.NewDescription(*m.Description)
-		if err != nil {
-			return nil, err
-		}
+		d := value_object.RestoreDescription(*m.Description)
 		description = d
 	}
 	var dueDate *value_object.DueDate
