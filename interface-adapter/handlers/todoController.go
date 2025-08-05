@@ -119,13 +119,14 @@ func (tc *TodoController) Create(c *gin.Context) {
 }
 
 func (tc *TodoController) FindByUserIDWithFilters(c *gin.Context) {
-	
+
 	// JWTからUserIDを取得
 	authUserID, err := common.GetAuthUserID(c)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid userID"})
 			return
 		}
+		
 	//requestパラメータを取得し、filtersDTOにバインド
 	var filtersDTO req.TodoFilters
 	if err := c.ShouldBindQuery(&filtersDTO); err != nil {
@@ -171,6 +172,7 @@ func (tc *TodoController) FindByUserIDWithFilters(c *gin.Context) {
 	todos, err := tc.findByUserIDWithFiltersUC.Execute(authUserID, domainFilters)
 		
 	if err != nil {
+		log.Printf("[ERROR] FindByUserIDWithFilters error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

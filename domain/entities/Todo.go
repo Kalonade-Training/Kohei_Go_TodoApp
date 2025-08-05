@@ -3,6 +3,9 @@ package entities
 import (
 	"time"
 	"fmt"
+	"regexp"
+	"strconv"
+	
 	value_object "goTodoApp/domain/value-object"
 )
 
@@ -185,7 +188,19 @@ func (t *Todo) ToInProgress() error {
 // Todoを複製する
 func (t *Todo) Duplicate() (*Todo, error) {
 	newID := value_object.NewTodoID()
-	newTitle, _ := value_object.NewTitle(t.title.Value() + "のコピー")
+	
+	baseTitle := t.title.Value()
+	copyCount := extractCopyCount(baseTitle)
+
+	//コピー番号をインクリメント
+	copyCount++
+	copiedTitle := stripCopySuffix(baseTitle) + fmt.Sprintf("のコピー (%d)", copyCount)
+
+	newTitle, err := value_object.NewTitle(copiedTitle)
+	if err != nil {
+		return nil, err
+	}
+	//statusをinprogressに
 	newStatus, err := value_object.NewStatus("in_progress")
 	if err != nil {
 		return nil, err
@@ -201,4 +216,22 @@ func (t *Todo) Duplicate() (*Todo, error) {
 		createdAt:   time.Now(),
 		updatedAt:   time.Now(),
 	},nil
+}
+
+// 「のコピー (数字)」の部分を取り除く
+func stripCopySuffix(title string) string {
+	re := regexp.MustCompile(`のコピー\s*\(\d+\)$`)
+	return re.ReplaceAllString(title, "")
+}
+
+// 「のコピー (数字)」から数字だけ取り出す
+func extractCopyCount(title string) int {
+	re := regexp.MustCompile(`のコピー\s*\((\d+)\)$`)
+	matches := re.FindStringSubmatch(title)
+	if len(matches) == 2 {
+		if n, err := strconv.Atoi(matches[1]); err == nil {
+			return n
+		}
+	}
+	return 0
 }

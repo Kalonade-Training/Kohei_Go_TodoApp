@@ -15,11 +15,14 @@ func NewDueDate(value string)(*DueDate, error){
 	if err != nil {
 		return nil, err
 	}
-	//入力された時間が過去でないかバリデーション
-	if parsedTime.Before(time.Now()){
-		return nil, errors.New("Due date cannot be in the past")
+	return &DueDate{value : parsedTime}, nil	
+}
+
+func ValidateDueDateNotPast(d *DueDate) error {
+	if d != nil && d.Value().Before(time.Now()) {
+		return errors.New("due date cannot be in the past")
 	}
-	return &DueDate{value: parsedTime}, nil
+	return nil
 }
 
 func (d DueDate) Value() time.Time{

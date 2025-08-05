@@ -28,6 +28,12 @@ func NewCreateTodoUseCase(repo repositories.ITodoRepository) *CreateTodoUseCase 
 }
 //入力を受け取り、新しいTodoを作成・保存
 func (uc *CreateTodoUseCase) Execute(input CreateTodoInput) (*entities.Todo, error) {
+
+	// 期限が過去の日付かチェック
+	if err := value_object.ValidateDueDateNotPast(input.DueDate); err != nil {
+		return nil, err
+	}
+	
 	// Todoエンティティ生成
 	todo := entities.NewTodo(
 		// ID生成はサーバー側で行う

@@ -21,7 +21,7 @@ func main() {
     router := gin.Default()
     
     //corsの設定
-    allowOrigins := []string{"http://localhost:5173", "https://react-todo-app-front.onrender.com"}
+    allowOrigins := []string{"http://localhost:5174", "https://react-todo-app-front.onrender.com"}
 
     router.Use(cors.New(cors.Config{
         AllowOrigins:     allowOrigins,
@@ -39,20 +39,19 @@ func main() {
 	routes.TodoRoutes(router, todoController, authMiddleware)
     routes.UserRoutes(router, userController)
 
-    // React の index.html を使えるようにする
-    router.LoadHTMLFiles("./dist/index.html")
+    // // React の index.html を使えるようにする
+    // router.LoadHTMLFiles("./dist/index.html")
 
-    router.StaticFile("/vite.svg", "./dist/vite.svg")
+    // router.StaticFile("/vite.svg", "./dist/vite.svg")
 
-    router.NoRoute(func(c *gin.Context) {
-    c.HTML(200, "index.html", nil)
-    })
+    // router.NoRoute(func(c *gin.Context) {
+    // c.HTML(200, "index.html", nil)
+    // })
 
     // サーバーの起動ポートを環境変数から取得（Render用）
     port := os.Getenv("PORT")
     if port == "" {
-        port = "8080" // ローカル用のデフォルトポート
+        port = "8080"
     }
-
     router.Run(":" + port)
 }

@@ -50,6 +50,10 @@ func (uc *UpdateTodoUseCase) Execute(todoID value_object.TodoID, authUserID valu
 	if input.DueDate == nil {
 		todo.ClearDueDate()
 	} else {
+		// ここで過去日付チェック
+		if err := value_object.ValidateDueDateNotPast(input.DueDate); err != nil {
+			return nil, err
+		}
 		todo.UpdateDueDate(input.DueDate.Value().Format("2006-01-02"))
 	}
 

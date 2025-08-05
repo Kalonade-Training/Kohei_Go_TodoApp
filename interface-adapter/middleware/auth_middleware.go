@@ -2,11 +2,13 @@ package middleware
 import (
 	"strings"
 	"net/http"
+	"log"
 	"goTodoApp/domain/services"
 	"github.com/gin-gonic/gin"
 )
 
 func TokenAuthMiddleware(tokenService services.ITokenService) gin.HandlerFunc{
+	log.Println("[DEBUG] authMiddleware start")
 	return func(c *gin.Context) {
 		//Authorizationヘッダーからトークンを取得
 		authHeader := c.GetHeader("Authorization")
@@ -35,6 +37,7 @@ func TokenAuthMiddleware(tokenService services.ITokenService) gin.HandlerFunc{
 
 		//userIDをコンテキストに設定
 		c.Set("userID", userID)
+		log.Println("[DEBUG] authMiddleware passed")
 		c.Next()
 	}
 }
