@@ -1,0 +1,43 @@
+package middleware
+import (
+	"strings"
+	"net/http"
+	"log"
+	"goTodoApp/domain/services"
+	"github.com/gin-gonic/gin"
+)
+
+func TokenAuthMiddleware(tokenService services.ITokenService) gin.HandlerFunc{
+	log.Println("[DEBUG] authMiddleware start")
+	return func(c *gin.Context) {
+		//Authorizationヘッダーからトークンを取得
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == ""{
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization header is required"})
+			c.Abort()
+			return
+		}
+		//Bearer トークン形式を検証
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer"{
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header format"})
+			c.Abort()
+			return
+		}
+		//トークンを検証
+		token := parts[1]
+		userID, err := tokenService.ValidateJWT(token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+			c.Abort()
+			return
+		}
+		//空白スペースを削除
+		userID = strings.TrimSpace(userID);
+
+		//userIDをコンテキストに設定
+		c.Set("userID", userID)
+		log.Println("[DEBUG] authMiddleware passed")
+		c.Next()
+	}
+}
