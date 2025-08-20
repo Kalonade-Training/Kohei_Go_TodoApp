@@ -3,7 +3,7 @@ package dto
 type TodoFilters struct {
 	Title       *string `form:"title"`
 	Description *string `form:"description"`
-	DueDateFrom *string `form:"due_date_from"`
-	DueDateTo   *string `form:"due_date_to"`
+	DueDateFrom *string `form:"dueDate_from"`
+	DueDateTo   *string `form:"dueDate_to"`
 	Status   		*string `form:"status"`
 }

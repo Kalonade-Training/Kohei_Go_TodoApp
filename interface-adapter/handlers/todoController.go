@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 	"log"
+	"fmt"
 	value_object "goTodoApp/domain/value-object"
 	req "goTodoApp/interface-adapter/dto/request"
 	res "goTodoApp/interface-adapter/dto/response"
@@ -78,7 +79,7 @@ func (tc *TodoController) Create(c *gin.Context) {
 	// DueDate
 	var dueDate *value_object.DueDate
 	if todoDTO.DueDate != nil {
-		dueDate, err = value_object.NewDueDate(*todoDTO.DueDate)
+		dueDate, err = value_object.NewDueDateFrom(*todoDTO.DueDate)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -133,11 +134,12 @@ func (tc *TodoController) FindByUserIDWithFilters(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query parameters"})
 		return
 	}
+	fmt.Printf("DEBUG - filtersDTO: %#v\n", filtersDTO)
 
 	// dto → repository用フィルタに変換
 	var dueDateFrom, dueDateTo *value_object.DueDate
 	if filtersDTO.DueDateFrom != nil && *filtersDTO.DueDateFrom != ""{
-		dueDateFrom, err = value_object.NewDueDate(*filtersDTO.DueDateFrom)
+		dueDateFrom, err = value_object.NewDueDateFrom(*filtersDTO.DueDateFrom) //string->time.Time
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid due_date_from"})
 			return
@@ -145,7 +147,7 @@ func (tc *TodoController) FindByUserIDWithFilters(c *gin.Context) {
 	}	
 
 	if filtersDTO.DueDateTo != nil && *filtersDTO.DueDateTo != ""	{
-		dueDateTo, err = value_object.NewDueDate(*filtersDTO.DueDateTo)
+		dueDateTo, err = value_object.NewDueDateTo(*filtersDTO.DueDateTo) //string->time.Time
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid due_date_from"})
 			return
@@ -164,8 +166,8 @@ func (tc *TodoController) FindByUserIDWithFilters(c *gin.Context) {
 	domainFilters := repositories.TodoFilters{
 		Title:       filtersDTO.Title,
 		Description: filtersDTO.Description,
-		DueDateFrom: dueDateFromTime,
-		DueDateTo:   dueDateToTime,
+		DueDateFrom: dueDateFromTime, // time.Time
+		DueDateTo:   dueDateToTime,// time.Time
 		Status:      filtersDTO.Status,
 	}
 	
@@ -264,7 +266,7 @@ func (tc *TodoController) Update(c *gin.Context) {
 
 	var dueDate *value_object.DueDate
 	if userInput.DueDate != nil && *userInput.DueDate != "" {
-		dueDate, err = value_object.NewDueDate(*userInput.DueDate)
+		dueDate, err = value_object.NewDueDateFrom(*userInput.DueDate)
 		if err != nil {
 			log.Printf("[ERROR] Invalid DueDate: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

@@ -131,7 +131,7 @@ func (t *Todo) ClearDescription() {
 }
 
 func (t *Todo) UpdateDueDate(newDueDate string) error{
-	dueDate, err := value_object.NewDueDate(newDueDate)
+	dueDate, err := value_object.NewDueDateFrom(newDueDate)
 	if err != nil {
 		return err
 	}

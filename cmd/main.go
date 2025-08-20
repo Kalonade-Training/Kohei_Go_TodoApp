@@ -21,7 +21,10 @@ func main() {
     router := gin.Default()
     
     //corsの設定
-    allowOrigins := []string{"http://localhost:5174", "https://react-todo-app-front.onrender.com"}
+    allowOrigins := []string{
+        "http://localhost:5174",
+        "http://localhost:5173",
+        "https://react-todo-app-front.onrender.com"}
 
     router.Use(cors.New(cors.Config{
         AllowOrigins:     allowOrigins,

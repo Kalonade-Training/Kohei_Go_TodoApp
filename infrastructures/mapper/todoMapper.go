@@ -58,7 +58,7 @@ func ModelToEntity(m model.Todo) (*entities.Todo,error) {
 	}
 	var dueDate *value_object.DueDate
 	if m.DueDate != nil {
-		d, err := value_object.NewDueDate(m.DueDate.Format("2006-01-02"))
+		d, err := value_object.NewDueDateFrom(m.DueDate.Format("2006-01-02"))
 		if err != nil {
 			return nil, err
 		}

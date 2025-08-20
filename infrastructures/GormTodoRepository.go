@@ -70,6 +70,11 @@ func (r *GormTodoRepository) FindTodoByID(
 
 // 全検索+filter検索
 func (r *GormTodoRepository) FindByUserIDWithFilters(userID value_object.UserID, filters *repositories.TodoFilters) ([]*entities.Todo, error) {
+
+	// デバッグ: フィルターの日付を確認
+    fmt.Printf("DEBUG - DueDateFrom: %#v\n", filters.DueDateFrom)
+    fmt.Printf("DEBUG - DueDateTo:   %#v\n", filters.DueDateTo)
+
 	var models []model.Todo
 	query := r.db.Model(&model.Todo{}).Where("user_id = ?", userID.Value())
 
@@ -80,11 +85,12 @@ func (r *GormTodoRepository) FindByUserIDWithFilters(userID value_object.UserID,
     query = query.Where("description LIKE ?", "%"+ *filters.Description +"%")
 	}
 	if filters.DueDateFrom != nil {
-			query = query.Where("due_date >= ?", filters.DueDateFrom)
-	}
+    query = query.Where("due_date >= ?", *filters.DueDateFrom)
+    }
 	if filters.DueDateTo != nil {
-			query = query.Where("due_date <= ?", filters.DueDateTo)
+		query = query.Where("due_date <= ?", *filters.DueDateTo)
 	}
+	
 	if filters.Status != nil {
 		switch *filters.Status {
 			case "completed":
@@ -93,7 +99,7 @@ func (r *GormTodoRepository) FindByUserIDWithFilters(userID value_object.UserID,
 				query = query.Where("status = ?", "in_progress")
 		}
 	}
-	if err := query.Find(&models).Error; err != nil {
+	if err := query.Debug().Find(&models).Error; err != nil {
 		return nil, fmt.Errorf("failed to find todos: %w", err)
 	}
 	todos := make([]*entities.Todo, 0, len(models))
